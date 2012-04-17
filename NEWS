@@ -1,0 +1,486 @@
+2.4.4
+	* Fix crash when saving a playlist with URLs.
+	* Fix hang in case of symlink loop (like symlink to parent directory)
+	  when adding files recursivelly to the playlist.
+	* Fix bad memory acces when using FILL parameter in layouts that caused
+	  "FATAL_ERROR: Layout1 is malformed".
+	* Fix compilation with newer ffmpeg. (Alexis Ballier)
+	* Increase maximum file title (made from tags) length to 512. Helps on
+	  wide terminals.
+	* Fix displaying URLs on the playlist when it ends with a slash.
+	* Fix compilation of flac plugin by detecting libflac using pkg-config.
+	* Fix for multichannel playback. (Maarten van Es)
+	* Fix handling of invalid track number in tags. A segfault occured when
+	  the track number was at least a value of 2^31.
+	* Support for the new (SVN) libmpcdec API.
+	* Remove old, irrelevant comment about iconv from the configuration
+	  file.
+	* Fix configure to display proper information about compiled RCC.
+	* Run libtoolize in autogen.sh to prevent conflicts with installed
+	  libtool/libltdl version.
+2.4.3
+	* Fix displaying tags from internet streams, sometimes the name of the
+	  station or other less seful text was displayed instead the title.
+	* Fix a problem with opening internet streams with curl 7.16.x. (Samid
+	  Tennakoon)
+	* Fix XTermTitle for urxvt.
+	* Fix delete and backspace keys in entries.
+	* Fix a race (crash) when issuing the next commands one after another
+	  very fast.
+	* Fix problems with vmix OSS virtual driver (no supported audio
+	  formats).
+	* Fix FollowPlayedFile after CLI restart.
+	* Updated moc.spec (Klaus Ethgen)
+2.4.2
+	* Disable 24bit output by default due to reported problems with some
+	  sound cards. It can be enabled by setting Allow24bitOutput option
+	  to yes.
+	* Fix escape key handling. (Jack Miller)
+	* Fix CTRL-key combinations in entries. (Jack Miller)
+	* Fix a crash when a file is precached and user requests playing a
+	  different file.
+	* Disabled using mmap() for reading files in the default configuration
+	  due to reported incrased memory usage.
+	* Fix ffmpeg build failure due to LOG_H defined by ffmpeg headers.
+	* Fix reading PLS playlists with more than 9 entries.
+	* Fix configure script: libiconv is required to build moc.
+	* Fix the A command for '..' directory (Debian Bug#416102)
+	* Fix displaying the playlist panel when the width of the terminal is
+	  an odd number.
+2.4.1
+	* Added Command 'P' and a configuration option PlaylistFullPaths to turn
+	  on/off displaying full paths for files in the playlist.
+	* Fixed choosing endianess when playing float samples (musepack or
+	  wave and other libsndfile formats).
+	* Fixed a crash when going to '../' with the search entry.
+	* Added MP4 to the list of supported by FFmpeg extensions.
+	* Fixed clearing playlist from the command line (crash on mocp -c -a -p
+	  file.mp3).
+	* Fixed handling mixer errors (crash in some situations).
+	* Fix searching with '/' (search began with the current item, not the
+	  whole list).
+	* Correct support librcc: tags ID3v1/v1.1 will be recoded in UTF-8
+	  instead of the local encoding. (Alexey Gladkov)
+	* Fixed handling invalid time in tags cache.
+	* Fixed handling error when time information for a file could not be
+	  read.
+	* MusicDir and FastDirX are parsed before they are used, this handles
+	  not "clean" directories in the config file (like /bin/ - with slash
+	  at the end).
+	* When interface is killed by SIGTERM or SIGHUP the playlist is saved
+	  and the terminal mode is restored.
+	* Setting volume in jack using an exponential function instead of
+	  linear. (x37v.alex)
+	* Draw bottom lines for side menus that don't touch the botom of the
+	  main menu.
+	* Reload directory content after running a custom command to see changes
+	  made in the filesystem by this command.
+	* Added missing exec_command# keys in the example keymap file.
+2.4.0
+	* Layout of the main window can be changed using Layout[123] options.
+	  Switching between layouts is done using the 'l' key and now TAB is
+	  used to switch between the playlist and the directory menu. For
+	  example, you can configure the layout to see both the playlist and a
+	  directory content.
+	* Support for WMA, RealAudio, MP4 and AAC file using FFmpeg.
+	* UTF-8 support.
+	* Selecting themes at runtime - T command (this does not change the
+	  config file).
+	* Executing external commands, like 'cp %f /mnt/usb_drive' where %f is
+	  substituted with the path to the currently selected file.
+	* Tags are cached at the server side and read in a separate thread.
+	  The interface is not locked until the tags are read. Size of the
+	  cache can be adjusted using TagsCacheSize. The cache is saved at exit
+	  and loaded at startup.
+	* Moving items up and down: u and j commands.
+	* Workaround for encoding of ID3v1 tags. New options: UseRCC - to use
+	  librcc for ID3v1 reencoding (Initial patch by Alexey Gladkov),
+	  ID3v1TagsEncoding - assumed encoding for ID3v1 tags.
+	* Added UseCursorSelection option (default: no) to display cursor on
+	  the selected file. This is useful with braille displays.
+	* Added SetXtermTitle option (disable/enable setting xterm title).
+	* Added m4a and aac to the list of extensions supported by ffmpeg.
+	* Pressing n when nothing is played starts playing from the first item
+	  on the playlist.
+	* Added FollowPlayedFile option: menu follows the currently played file
+	  so that it is scrolled if the file is outside the visible part
+	  (default to yes).
+	* Numbering items in the playlist. Can be turned off using
+	  PlaylistNumbering.
+	* New themes: moca_theme (Nicola Vitale), red_theme (yyz), and
+	  darkdot_theme (David Lazar).
+	* Added a command for adding a URL to the playlist using entry (CTRL-u).
+	* A and --append can add files from playlists.
+	* Interface show the playlist after startup if something from the
+	  playlist is played (CanStartInPlaylist option).
+	* Commands: --append, --clear, --play work now as expected even if there
+	  is no client running.
+	* Use full paths instead of just file names for displaying on the
+	  playlist.
+	* Internet streams can be paused.
+	* Ogg plugin name was changed to vorbis.
+	* Added RPM SPEC file. (Fredrik Rambris)
+	* Redesign of the interface code. This is a big change in the code, but
+	  not really visible to the user. It was necessary to maintain and
+	  extend the interface in the future.
+	* MOC can now be compiled under OpenBSD. Thanks to Tilo Stritzky for
+	  pointing out the issues.
+	* Striping leading and trailing white characters from URLs entered by
+	  the user.
+	* Count speex time without scaning the whole file.
+	* -e is an alias for -a.
+	* Display the current time for internet streams.
+	* MusicDir can be a playlist.
+	* Silent seeking can be configured using SilentSeekTime option.
+	* After adding a file to the playlist, the cursor is moved down.
+	* The help screen's position is kept when it's not displayed.
+	* Some operations like deleting items from the playlist should now be
+	  faster.
+	* Fixed a possible deadlock while seeking. This fixes a hang on
+	  FreeBSD 6.
+	* Fixed OSS support on some machones (like G3 iBook).
+2.3.3
+	* Workaround for backspace key on many terminals (like aterm).
+	* Fixed a memory leak when playing internet streams. (rixx)
+	* Fixed a crash when an mpc file coudn't be read.
+	* Fixed a memory leak occuring with every played mp3 file.
+	* Fixed a memory leak when seeking in MPC file.
+	* Fixed compilation on OpenBSD. (Tilo Stritzky)
+	* Fixed parsing Icy metadata packages (possible segfault).
+	* Fixed resource leak when reading tags from invalid OGG file.
+	* Check if FileNamesIconv has valid format at startup like TagsIconv.
+2.3.2
+	* Optimized 24bit->16bit conversion. Helps playing mp3 on handheld
+	  devices without FPU.
+	* Fixed a crash when using the playlist with ReadTags turnedoff.
+	* Fixed detecting taglib 1.4.
+	* Fixed mutex initialization in io objects (crash on some systems -
+	  FreeBSD).
+	* Moved the man page to section 1.
+	* Fixed bahaviour when one or both OSS mixer channels are not available.
+	* Sort file names using the current locale settings. (breg)
+	* Fixed -p description.
+	* Fixed a memory leak when adding an item to a full entry's history.
+	* Slightly less CPU usage in the client due to elimination of useless
+	  bitrate updates.
+	* Fixed a typo: owerwrite -> overwrite.
+2.3.1
+	* Fixed detecting MPEG stream by the content (Shoutcast fix).
+	* Fixed handling ALSA mixer events (crash in some situations).
+	* Fixed handling a mixer channel that has no playback volume.
+	* Fixed crash when the alsa mixer couldn't be opened.
+	* Fixed crash when nothing was decoded (appears sometimes when holding
+	  the enter key on an mp3 file).
+	* Fixed a crash which shows up on FreeBSD 5.4 after playing a file.
+	  Thanks to Joseph Dunn for help.
+	* Fixed includes for maximum and minimum values of intiger types (fix
+	  compilation on some systems).
+	* Fixed the syntax (not a proper C code). Mostly taken from the FreeBSD
+	  port.
+	* Show stream URL instead of nothing if the title is not available.
+	* Fixed yellow_red_theme theme.
+	* Fixed a hang after file open error.
+	* Fixed counting time after file open error.
+	* Fixed some gcc4 warnings.
+2.3.0
+	* Network streams (shoutcast, icecast, regular HTTP, FTP). You can load
+	  an m3u file with a URL or use the 'o' command.
+	* JACK output (by Alex Norman).
+	* Added support for musepack (mpc).
+	* The search command filters out not matching elements from the menu and
+	  allows to walk through the items like in the regular menu.
+	* Added support for speex format.
+	* Plugins: to drop dependencies from many exotic libraries, support for
+	  file formats was moved to shared libraries. This should help making
+	  MOC packages in future when more formats will be added.
+	* Sample rate conversion using libsamplerate and some sound conversions
+	  like 16bit -> 24bit etc. With 24bit sound cards 24bit output is used
+	  with mp3.
+	* Added support for PLS version 2 playlists.
+	* Added mono to stereo conversion.
+	* MOC now compiles using libtool.
+	* Error messages for precached files are not displayed while other file
+	  is being played.
+	* Input buffer in a separated thread is used for reading files (new
+	  options: InputBuffer and Prebuffering).
+	* New theme: Yellow/Red (by Morten Grunnet Buhl).
+	* Added -A command line option and ASCIILines config option that
+	  disables usage of graphic characters to draw lines.
+	* Added commands to set volume from 10% to 90% in 10% steps, default
+	  bindings are ALT-1 to ALT-9.
+	* Added commands to quickly go to a selected directories
+	  (by Alex Norman).
+	* Added --next and --previous command line options (by Alex Norman).
+	* Added --info command line option that prints all information about the
+	  currently played file. (Based on the code by Michael Banks)
+	* Two mixer channels can be set in the configuration file. They can be
+	  switched at run time by pressing x.
+	* Documentation of some parts of the code in Doxygen format.
+	* Colors can be redefined in themes using 'colordef COLOR = R G B'
+	  (works for terminal that can change the colors).
+	* Support for 24bit flac files (not tested).
+	* Added SeekTime option: how fast the seeking is. (Kamil Tarkowski)
+	* A list of sound drivers can be used instead of only one driver in the
+	  configuration file. The first working driver will be used.
+	* MusicDir can be set to a playlist.
+	* Alsa mixer has always 0-100 range despite the actual device range.
+	* Added --toggle-pause command line option.
+	* Don't block the audio device when paused. Based on a patch
+	  by hondza <miscreant@tiscali.cz>
+	* Treat an option that is set in the config file more than once as an
+	  error.
+	* Print descriptions for some errors in the config file.
+	* Better error messages in the Ogg plugin.
+	* Better detecting Ogg vorbis stream by content.
+	* Decreased the time to wait for the pcm to become ready to get samples
+	  in alsa. This helps with underruns.
+	* Fixed protect attribute in themes.
+	* Added black_theme (by Arn).
+	* History for "go to a directory" and "enter URL" commands (using
+	  arrows).
+	* CTRL-l like CTRL-r refreshes the screen.
+	* Separated iconv() conversion for file names and tags.
+	* Improved performance a bit when operating on big playlists.
+	* G command points to the currently played file - on the playlist if
+	  it's there, and selects it in the menu.
+	* When going to a directory using the i command, TAB completes to the
+	  matching part of ambiguous directories.
+	* Volume changes made by other programs are detected.
+	* Added --recursively command line option (make a playlist from the
+	  content of a directory given at command line).
+	* Show bitrate in the right time - the value corresponds to what you
+	  can hear, not the position that the decoder is at.
+	* Added description about creating a decoder plugin.
+	* Added introduction pages to Doxygen documentation.
+	* Documented decoder plugins API.
+	* Added --playit option (play files given on the command line without
+	  modifing the playlist).
+	* Added UseRealtimePriority (default no) option: set realtime priority
+	  for the output buffer thread.
+	* Titles in saved playlists are not converted by iconv().
+	* Fixed crash on some systems when a file is precached.
+	* Refuse to run if an ALSA mixer channel is wrong.
+	* Fixed adding items to the playlist when the server's playlist already
+	  has added files.
+	* Don't try to use colors on black/white terminals.
+	* Fixed a memory leak in iconv_str() when iconv() is not available.
+	(breg)
+2.2.2
+	* Added an option to ignore CRC errors in mp3 files (set to yes by
+	  default, like most players do). This fixes playing mp3 files that
+	  have bad CRC checksums but are actually good.
+	* Fixed marking the currently played item when a new item on the
+	  playlist appears.
+	* Fixed a crash when going back at the first item with Repeat turned
+	  on (Debian Bug#307651).
+	* Fixed a crash when the time of a file can't be read.
+	* Fixed handling FLAC files with 8-bit samples.
+	* Added mp2, mp1, and mpga to the list of supported extensions by MAD:
+	  this makes possible to play MPEG Layer I and II files.
+	* Fixed a race condition that crashes MOC when switching songs quickly.
+	* Fixed a small memory leak in FLAC.
+	* Ogg Vorbis is not required for compilation (a bug in the configure
+	  script).
+	* Use a pipe to wake up another thread from select() instead of a
+	  signal. Helps on NetBSD where pthread_kill() doesn't interrupt
+	  select().
+	* Fixes for compiler warnings on 64-bit systems.
+	* Fixed a warning about wprintw() usage on some systems.
+	* Fixed setting compiler flags for vorbis.
+2.2.1
+	* Fixed missing titles of files without tags when added to the playlist.
+	* Fixed refreshing the screen after searching.
+	* Fixed recognizing AIFF file extension.
+	* Fixed compiler warnings on 64bit systems.
+	* Fixed detecting ncurses, now also works with curses.
+	* Fixed compilation errors on ioctl() use on some systems.
+	* Support for libossaudio (NetBSD).
+	* Fixed an compiler warning about EV_ERROR on NetBSD.
+	* Better checking for vorbis.
+	* Fixed --without-sndfile configure option.
+	* Fixed a rare deadlock.
+2.2.0
+	* Added support for FLAC audio format.
+	* Added suport for various file formats like au, aiff, voc, and more
+	  using libsndfile. This also provides better support for waves.
+	* Custom keymaps can be used.
+	* Synchronizing the playlist between clients (interface instances).
+	* Going to a directory by typing the path with file-name completion
+	  (i command).
+	* Ability to use default (transparent) and grey color
+	  (Marcin Micha³owski).
+	* Added a theme with transparent background (Marcin Micha³owski).
+	* Added nightly_theme (Wim Speekenbrink).
+	* Added green_theme (Jacek Lehmann).
+	* Global theme directory.
+	* MOC should now work on big-endian processors.
+	* Added XTermTheme option to use a different theme when running on
+	  XTerm.
+	* Fixed the 'next' command when AutoNext option is turned off.
+	* Displaying the total time of files on the playlist and in directories.
+	* Faster reading and saving playlists.
+	* Added --pause and --unpause command line parameters.
+	* Added AlsaMixer and AlsaDevice options.
+	* Added G command: go to a directory when the currently played file is.
+	* Added U command: go to '..'.
+	* Recognize if a file was modified and rereading tags and time if
+	  necessary.
+	* Fast, silent seeking ('[' and ']' keys).
+	* The cursor is hidden when it's not needed.
+	* Changed the erroneous name of the time_left_frames to
+	  time_total_frames in themes.
+	* Added '/' command working as an alias for g (Kamil Tarkowski).
+	* Added CTRL-n working like CTRL-g (Kamil Tarkowski).
+	* ? key working like h (Kamil Tarkowski).
+	* Playlist time displayed in format 000:00:00 (Kamil Tarkowski).
+	* True shuffle, not a random item from the playlist.
+	* Changing the icon name when changing the xterm title (Jacek Lehmann).
+	* Arrow keys and the delete key works in the entry field.
+	* Detecting other terminals beside xterm (Jacek Lehmann).
+	* Added b (back) command (Kamil Tarkowski).
+	* A bit faster getting files time.
+	* Added SavePlaylist option.
+	* Added a bar showing time of the current file.
+	* Repeat without AutoNext plays a song in loop.
+	* Added (empty|filled)_mixer_bar, (empty|filled)_time_bar to themes.
+	* Fixed setting sound parameters while playing OGG. This caused crashes
+	  on big endian machines (Philippe De Muyter).
+	* Fixed crash on some file tags.
+	* Fixed crash when issuing some errors.
+	* Fixed the --help message.
+	* Fixed bad terminal state after exiting the client in rare cases.
+	* Fixed adding directories recursively when ReadTags is turned off.
+	* Fixed going to the root directory with the i command.
+	* Fixed getting time when nothing is played.
+	* iconv() (character set conversion) for file names.
+	* END and HOME keys working in the i command entry (go to a directory).
+	* Synchronizing adding/deleting items from the playlist with the
+	  server's playlist.
+	* Faster operations on big playlists.
+	* Fixed saving playlist when more than one client wants to do this.
+	* Fixed recursive adding file to the playlist if some directory
+	  can't be read.
+	* Fixed deleting items from the playlist.
+	* Fixed handling a playlist file as command a line argument.
+	* Fixed compilation with --disable-debug.
+	* Fixed --version information.
+	* Fixed sorting when using the A command.
+	* Position of time and format in menu is fixed.
+	* Searching for a theme in the user directory first.
+	* Fixed a memory leak when reading OGG tags.
+	* Few fixes when running MOC with file names or directories as
+	  arguments.
+	* Fixed reading track numbers for mp3 files.
+	* Small fixes of ALSA behaviour when underrun occurs.
+2.1.4
+	* Fixed the 'next' command when AutoNext is turned off.
+	* Sorting the files before adding them to the playlist when using the
+	  A command.
+	* Fixed a memory leak when reading tags of ogg files.
+	* Fixed reading track numbers of mp3 files.
+	* Detect other X terminals beside xterm.
+	* Fixed error messages for mp3 files.
+	* Fixed segfault when reading some tags.
+2.1.3
+	* Fixed compilation with header files not from Linux 2.4.
+2.1.2
+	* Fixed playing mp3 with UseMmap turned on.
+	* Fixed handling ALSA device open errors.
+	* Proper handling 8, 16, and 24 bit sound, raise error if using
+	  anything else.
+	* Fixed a (almost :) deadlock when pressing stop when seeking.
+2.1.1
+	* Added missing example_theme.
+2.1.0
+	* Multiple clients. You can have moc interface on many
+	  consoles/terminals.
+	* Searching the menu (CTRL-g) like M-s in Midnight Commander.
+	* Playlist load/save support (m3u files).
+	* The apperance can be customized using themes.
+	* Displaying file time and format in the menu.
+	* Precaching files and not closing the audio device when playing
+	  the next file - no more gaps between two songs.
+	* ALSA support.
+	* Optional character set conversion using iconv().
+	* MOC remembers the playlist between runs.
+	* Option to hide file names extension.
+	* Use of mmap() can be turned off (usefull on NFS).
+	* Ability to use different config file/directory tan the default.
+	* Pressing CTRL-C interrupts long operations that blocks the interface
+	  like reding tags for hundreds of files.
+	* Fixed seeking and counting time in VBR mp3 files.
+	* Fixes for systems where threads are not processes.
+	* Small fixes and cleanups.
+2.0.1
+	* Do not allow to add '..' to the playlist.
+	* Fixed seeking when not playing.
+	* Fixed segfault when using f after creating a playlist from the
+	  command line.
+	* Fixed invoking MOC with relative path arguments
+	* Fixed displaying file title longer than the window.
+	* Fixed broken menu after resizing terminal when help screen is
+	  displayed.
+2.0.0
+	* Split into client-server, you can detach the interface and leave
+	  the server playing songs in the background (keys: q - background,
+	  Q - quit).
+	* Output buffer with seperate thread.
+	* Using OSS directly - better stop and pause.
+	* Support xterm resizing.
+	* Using xterm title.
+	* Autonext option (X key).
+	* Faster reading directory contents.
+	* Displaying time left to the end of the songs.
+	* Fixed moving through symlinked directories.
+	* Renamed executable file to mocp due to conflict with QT meta object
+	  compiler.
+	* Configurable mixer channel, OSS output device, and mixer device.
+	* ^r - refresh the screen, r - reread the directory.
+	* H command and ShowHiddenFiles - as the option says.
+	* Do not allow displaying bitrate too fast to read it.
+	* Fixed compilation with pthreads, better configure.
+	* Fixed problems when compiling with gcc 3.3
+	* Fixed displaying window title longer than the window.
+	* Space key working as pause.
+	* Fixed possible segfault in trenary expressions.
+	* Removed version checker.
+	* Fixed sorting directories ('../' was not always on top).
+	* Fixed escaping characters in config file, no need for '\\\\'.
+	* Stronger checking for parse errors in configuration file.
+1.1.0
+	* Support for WAVE.
+	* Playlist without reading/writeing to file.
+	* Option in the config file to automaticaly change process priority at
+	  startup. Helpful on slow computers.
+	* Recursivaly adding files from comamnd line and from the interface.
+	* Shuffle and repeat.
+	* Nice progress bar for longer operations.
+	* Fixed segfault when using the END key.
+	* Fixed segfault when playing OGG files.
+	* Workaround for kde and gnome terminals.
+	* Now MOC can be compiled on FreeBSD.
+	* Other fixes.
+1.0.0
+	* First release intended to be stable and user-friendly :)
+	* Added man page.
+	* Added version checker (simple command to see if a new version of MOC
+	  has been released).
+	* Fixed problem when compiling without ogg.
+	* Added redraw command.
+	* Other small fixes.
+0.9.2
+	* Fixed -s option.
+	* Added 'f' command (switching between short and full file names).
+	* Added README file.
+	* Added support for config file.
+	* Added MusicDir option, 'm' command and '-m' switch.
+	* Added ability to turning off messages about broken streams.
+	* Fixed including dirent.h for various OS.
+	* Fixed and updated configure.
+0.9.1
+	* Added mixer (using OSS).
+	* Added help screen.
+	* Fixed some tiny buffer overflows.
+	* Small fixes in code.
+0.9.0
+	* First stable version.

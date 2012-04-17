@@ -1,0 +1,453 @@
+/*
+ * MOC - music on console
+ * Copyright (C) 2005,2006 Damian Pietras <daper@daper.net>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+/* _XOPEN_SOURCE is known to break cmpilation under OpenBSD */
+#ifndef OPENBSD
+# define _XOPEN_SOURCE  500 /* for wcswidth() */
+#endif
+
+#include <stdarg.h>
+
+#ifdef HAVE_ICONV_H
+# include <iconv.h>
+#endif
+#ifdef HAVE_RCC
+# include <librcc.h>
+#endif
+#ifdef HAVE_NL_TYPES_H
+# include <nl_types.h>
+#endif
+#ifdef HAVE_LANGINFO_H
+# include <langinfo.h>
+#endif
+
+#ifdef HAVE_NCURSESW_H
+# include <ncursesw/curses.h>
+#elif HAVE_NCURSES_H
+# include <ncurses.h>
+#else
+# include <curses.h>
+#endif
+#include <assert.h>
+#include <string.h>
+#include <errno.h>
+#include <wchar.h>
+
+#include "common.h"
+#include "log.h"
+#include "options.h"
+#include "utf8.h"
+
+static char *terminal_charset = NULL;
+static int using_utf8 = 0;
+
+static iconv_t iconv_desc = (iconv_t)(-1);
+static iconv_t files_iconv_desc = (iconv_t)(-1);
+static iconv_t xterm_iconv_desc = (iconv_t)(-1);
+
+
+char *iconv_rcc (char *str)
+{
+#ifdef HAVE_RCC
+	rcc_string rccstring;
+	char *reencoded;
+
+	assert (str != NULL);
+
+	rccstring = rccFrom(NULL, 0, str);
+	if (rccstring) {
+		if (*rccstring && (reencoded = rccToCharset(NULL, "UTF-8", rccstring))) {
+		    free(str);
+		    free(rccstring);
+		    return reencoded;
+		}
+		
+		free (rccstring);
+	}
+	return str;
+#endif /* HAVE_RCC */
+	return xstrdup (str);
+}
+
+
+/* Return a malloc()ed string converted using iconv().
+ * if for_file_name is not 0, uses the conversion defined for file names.
+ * For NULL returns NULL. */
+char *iconv_str (const iconv_t desc, const char *str)
+{
+	char buf[512];
+	char *inbuf, *outbuf;
+	char *str_copy;
+	size_t inbytesleft, outbytesleft;
+	char *converted;
+
+	if (!str)
+		return NULL;
+	if (desc == (iconv_t)(-1))
+		return xstrdup (str);
+
+	str_copy = inbuf = xstrdup (str);
+	outbuf = buf;
+	inbytesleft = strlen(inbuf);
+	outbytesleft = sizeof(buf) - 1;
+
+	iconv (desc, NULL, NULL, NULL, NULL);
+	
+	while (inbytesleft) {
+		if (iconv(desc, &inbuf, &inbytesleft, &outbuf,
+					&outbytesleft)
+				== (size_t)(-1)) {
+			if (errno == EILSEQ) {
+				inbuf++;
+				inbytesleft--;
+				if (!--outbytesleft) {
+					*outbuf = 0;
+					break;
+				}
+				*(outbuf++) = '#';
+			}
+			else if (errno == EINVAL) {
+				*(outbuf++) = '#';
+				*outbuf = 0;
+				break;
+			}
+			else if (errno == E2BIG) {
+				outbuf[sizeof(buf)-1] = 0;
+				break;
+			}
+		}
+	}
+
+	*outbuf = 0;
+	converted = xstrdup (buf);
+	free (str_copy);
+	
+	return converted;
+}
+
+char *files_iconv_str (const char *str)
+{
+    return iconv_str (files_iconv_desc, str);
+}
+
+char *xterm_iconv_str (const char *str)
+{
+    return iconv_str (xterm_iconv_desc, str);
+}
+
+int xwaddstr (WINDOW *win, const char *str)
+{
+	int res;
+	
+	if (using_utf8)
+		res = waddstr (win, str);
+	else {
+		char *lstr = iconv_str (iconv_desc, str);
+
+		res = waddstr (win, lstr);
+		free (lstr);
+	}
+
+	return res;
+}
+
+/* Convert multi byte sequence to wide characters. Change invalid UTF-8
+ * sequences to '?'. dest can be NULL like in mbstowcs().
+ * If invalid_char is not null it will be set to 1 if an invalid character
+ * appears in the string, 0 otherwise. */
+static size_t xmbstowcs (wchar_t *dest, const char *src, size_t len,
+		int *invalid_char)
+{
+	mbstate_t ps;
+	size_t count = 0;
+
+	assert (src != NULL);
+	assert (!dest || len > 0);
+
+	memset (&ps, 0, sizeof(ps));
+
+	if (dest)
+		memset (dest, 0, len * sizeof(wchar_t));
+
+	if (invalid_char)
+		*invalid_char = 0;
+
+	while (src && (len || !dest)) {
+		size_t res;
+
+		res = mbsrtowcs (dest, &src, len, &ps);
+		if (res != (size_t)-1) {
+			count += res;
+			src = NULL;
+		}
+		else {
+			size_t converted;
+			
+			src++;
+			if (dest) {
+				converted = wcslen (dest);
+				dest += converted;
+				count += converted;
+				len -= converted;
+
+				if (len > 1) {
+					*dest = L'?';
+					dest++;
+					*dest = L'\0';
+					len--;
+				}
+				else
+					*(dest - 1) = L'\0';
+			}
+			else
+				count++;
+			memset (&ps, 0, sizeof(ps));
+
+			if (invalid_char)
+				*invalid_char = 1;
+		}
+	}
+
+	return count;
+}
+
+int xwaddnstr (WINDOW *win, const char *str, const int n)
+{
+	int res;
+
+	assert (n > 0);
+	assert (str != NULL);
+	
+	if (using_utf8) {
+
+		/* This nasty hack is because we need to count n in chars, but
+		 * [w]addnstr() takes argument in bytes (in UTF-8 i char can be
+		 * more than 1 byte. There are also problems with [w]addnwstr()
+		 * (screen garbled). I have no better idea. */
+		
+		wchar_t *ucs;
+		size_t size;
+		size_t utf_num_chars;
+		int inv_char;
+
+		size = xmbstowcs (NULL, str, -1, NULL) + 1;
+		ucs = (wchar_t *)xmalloc (sizeof(wchar_t) * size);
+		xmbstowcs (ucs, str, size, &inv_char);
+		if ((size_t)n < size - 1)
+			ucs[n] = L'\0';
+		utf_num_chars = wcstombs (NULL, ucs, 0);
+		if (inv_char) {
+			char *utf8 = (char *)xmalloc (utf_num_chars + 1);
+
+			wcstombs (utf8, ucs, utf_num_chars + 1);
+			res = waddstr (win, utf8);
+			free (utf8);
+		}
+		else
+			res = waddnstr (win, str, utf_num_chars);
+		free (ucs);
+	}
+	else {
+		char *lstr = iconv_str (iconv_desc, str);
+
+		res = waddnstr (win, lstr, n);
+		free (lstr);
+	}
+
+	return res;
+}
+
+int xmvwaddstr (WINDOW *win, const int y, const int x, const char *str)
+{
+	int res;
+	
+	if (using_utf8)
+		res = mvwaddstr (win, y, x, str);
+	else {
+		char *lstr = iconv_str (iconv_desc, str);
+
+		res = mvwaddstr (win, y, x, lstr);
+		free (lstr);
+	}
+
+	return res;
+}
+
+int xmvwaddnstr (WINDOW *win, const int y, const int x, const char *str,
+		const int n)
+{
+	int res;
+	
+	if (using_utf8)
+		res = mvwaddnstr (win, y, x, str, n);
+	else {
+		char *lstr = iconv_str (iconv_desc, str);
+
+		res = mvwaddnstr (win, y, x, lstr, n);
+		free (lstr);
+	}
+
+	return res;
+}
+
+int xwprintw (WINDOW *win, const char *fmt, ...)
+{
+	va_list va;
+	int res;
+	char buf[1024];
+
+	va_start (va, fmt);
+	vsnprintf (buf, sizeof(buf), fmt, va);
+	buf[sizeof(buf)-1] = 0;
+	va_end (va);
+
+	if (using_utf8)
+		res = waddstr (win, buf);
+	else {
+		char *lstr = iconv_str (iconv_desc, buf);
+
+		res = waddstr (win, lstr);
+		free (lstr);
+	}
+
+	return res;
+}
+
+static void iconv_cleanup ()
+{
+	if (iconv_desc != (iconv_t)(-1)
+			&& iconv_close(iconv_desc) == -1)
+		logit ("iconv_close() failed: %s", strerror(errno));
+#ifdef HAVE_RCC
+	rccFree ();
+#endif
+}
+
+void utf8_init ()
+{
+#ifdef HAVE_NL_LANGINFO_CODESET
+#ifdef HAVE_NL_LANGINFO
+	terminal_charset = xstrdup (nl_langinfo(CODESET));
+	assert (terminal_charset != NULL);
+
+	if (!strcmp(terminal_charset, "UTF-8")) {
+#ifdef HAVE_NCURSESW
+		logit ("Using UTF8 output");
+		using_utf8 = 1;
+#else /* HAVE_NCURSESW */
+		terminal_charset = xstrdup ("US-ASCII");
+		logit ("Using US-ASCII conversion - compiled without "
+				"libncursesw");
+#endif /* HAVE_NCURSESW */
+	}
+	else
+		logit ("Terminal character set: %s", terminal_charset);
+#else /* HAVE_NL_LANGINFO */
+	terminal_charset = xstrdup ("US-ASCII");
+	logit ("Assuming US-ASCII terminal character set");
+#endif /* HAVE_NL_LANGINFO */
+#endif /* HAVE_NL_LANGINFO_CODESET */
+
+	if (!using_utf8 && terminal_charset) {
+		iconv_desc = iconv_open (terminal_charset, "UTF-8");
+		if (iconv_desc == (iconv_t)(-1))
+			logit ("iconv_open() failed: %s", strerror(errno));
+	}
+#ifdef HAVE_RCC
+	rcc_class classes[] = {
+		{ "input", RCC_CLASS_STANDARD, NULL, NULL, "Input Encoding",
+			0 },
+		{ "output", RCC_CLASS_KNOWN, NULL, NULL,
+			"Output Encoding", 0 },
+		{ NULL, 0, NULL, NULL, NULL, 0 }
+	};
+
+	rccInit ();
+	rccInitDefaultContext(NULL, 0, 0, classes, 0);
+	rccLoad(NULL, "moc");
+	rccSetOption(NULL, RCC_OPTION_TRANSLATE,
+			RCC_OPTION_TRANSLATE_SKIP_PARRENT);
+	rccSetOption(NULL, RCC_OPTION_AUTODETECT_LANGUAGE, 1);
+#endif /* HAVE_RCC */
+
+	if (options_get_int ("FileNamesIconv"))
+	{
+		files_iconv_desc = iconv_open ("UTF-8", "");
+	}
+
+	if (options_get_int ("NonUTFXterm"))
+	{
+		xterm_iconv_desc = iconv_open ("", "UTF-8");
+	}
+
+}
+
+void utf8_cleanup ()
+{
+	if (terminal_charset)
+		free (terminal_charset);
+	iconv_cleanup ();
+}
+
+/* Return the number of columns the string takes when displayed. */
+size_t strwidth (const char *s)
+{
+	wchar_t *ucs;
+	size_t size;
+	size_t width;
+
+	assert (s != NULL);
+
+	size = xmbstowcs (NULL, s, -1, NULL) + 1;
+	ucs = (wchar_t *)xmalloc (sizeof(wchar_t) * size);
+	xmbstowcs (ucs, s, size, NULL);
+	width = wcswidth (ucs, WIDTH_MAX);
+	free (ucs);
+
+	return width;
+}
+
+/* Return a malloc()ed string containing the tail of str maximum of len chars
+ * (in columns occupied on the screen). */
+char *xstrtail (const char *str, const int len)
+{
+	wchar_t *ucs;
+	wchar_t *ucs_tail;
+	size_t size;
+	int width;
+	char *tail;
+
+	assert (str != NULL);
+	assert (len > 0);
+
+	size = xmbstowcs(NULL, str, -1, NULL) + 1;
+	ucs = (wchar_t *)xmalloc (sizeof(wchar_t) * size);
+	xmbstowcs (ucs, str, size, NULL);
+	ucs_tail = ucs;
+	
+	width = wcswidth (ucs, WIDTH_MAX);
+	assert (width >= 0);
+
+	while (width > len)
+		width -= wcwidth (*ucs_tail++);
+
+	size = wcstombs (NULL, ucs_tail, 0) + 1;
+	tail = (char *)xmalloc (size);
+	wcstombs (tail, ucs_tail, size);
+	
+	free (ucs);
+
+	return tail;
+}

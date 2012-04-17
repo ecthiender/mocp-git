@@ -1,0 +1,246 @@
+.TH MOC 1 "25 December 2005" "Version 2.4.0" "music on console"
+
+.SH NAME
+MOC \- console audio player
+
+.SH SYNOPSIS
+.B mocp
+[OPTIONS] [FILE ...]
+
+.SH DESRIPTION
+
+MOC is a console audio player with simple ncurses interface. It supports OGG,
+wave, and MP3 formats. Just run mocp, go to some directory using menu and
+press enter to start playing file, program will be playing automaticaly rest
+of the files in the directory.
+
+With no options and no file arguments the program begins in current directory or
+in MusicDir if StartInMusicDir option is set. If you give a directory on the
+command line, MOC will try to go there. With files or multiple directories,
+everything will be added to the playlist recursively.
+
+.SH OPTIONS
+If an option can be also set in the configuration file, the command line
+overrides it.
+
+.TP
+.I -D --debug
+Run in debug mode. Client and server logs much information to debug files.
+Don't use this, the server log is large.
+This is only available if MOC was compiled without --disable-debug.
+
+.TP
+.I -S --server
+Run only the server and exit.
+
+.TP
+.I -F --foreground
+Implies -S. Run the server in foreground and log everything to stdout.
+
+.TP
+.I -R --sound-driver NAME
+Use the specified sound driver. This can be OSS, ALSA, or null (for debugging).
+Some of the drivers could not be compiled in. This option is called SoundDriver
+in configuration file.
+
+.TP
+.I -m --music-dir
+Start in MusicDir (set in configuration file). This can be also set in
+configuration file as StartInMusicDir.
+
+.TP
+.I -a --append
+Append files, directories (recursively) and playlists given after options to
+the playlist. Don't start the interface.
+
+.TP
+.I -c --clear
+Clear the playlist.
+
+.TP
+.I -p --play
+Start playing from the first item on the playlist.
+
+.TP
+.I -f --next
+Request playing the next song from the server's playlist.
+
+.TP
+.I -r --previous
+Request playing the previous song from the server's playlist.
+
+.TP
+.I -s --stop
+Request stop playing from the server.
+
+.TP
+.I -x --exit
+Bring down the server.
+
+.TP
+.I -P --pause
+Request pause from the server.
+
+.TP
+.I -U --unpause
+Request unpause from the server.
+
+.TP
+.I -G --toggle-pause
+Toggle between play/pause.
+
+.TP
+.I -k --seek N
+Seek by N seconds (can be negative).
+
+.TP
+.I -T --theme theme
+Use a theme file. If the path is not absolute, the file will be searched in
+/usr/share/moc/themes/ (depends on installation prefix), ~/.moc/themes/ and in
+the current directory.
+
+.TP
+.I -C --config FILE
+Use the specified config file instead of the default.
+
+.TP
+.I -M --moc-dir DIR
+Use the specified MOC directory instead of the default. This also causes to use
+the config file from that directory. This can be also specified in the config
+file using the MOCDir option.
+
+.TP
+.I -y --sync
+This copy of the interface will be synchronizing the playlist with other
+clients. This option is calles SyncPlaylist in the configuration file.
+
+.TP
+.I -n --nosync
+This copy of the interface will not be synchronizing its playlist with other
+clients (see above).
+
+.TP
+.I -A --ascii
+Use ASCII characters to draw lines (helps on some terminals).
+
+.TP
+.I -i --info
+Print the information about the currently played file.
+
+.TP
+.I -Q --format FORMAT_STRING
+Print information about the currently played file using a format string.
+Replace string sequences with proper information:
+
+.TP
+State
+%state
+.TP
+File
+%file
+.TP
+Title
+%title
+.TP
+Artist
+%artist
+.TP
+SongTitle
+%song
+.TP
+Album
+%album
+.TP
+TotalTime
+%tt
+.TP
+TimeLeft
+%tl
+.TP
+TotalSec
+%ts
+.TP
+CurrentTime
+%ct
+.TP
+CurrentSec
+%cs
+.TP
+Bitrate
+%b
+.TP
+Rate
+%r
+.TP
+\\n
+\\n
+
+It is also possible to use variables from the FormatString configuration
+option.
+
+.TP
+.I -e --recursively
+Alias for -a for backward compatybility.
+
+.TP
+.I -h --help
+Print list of options with short description and exit.
+
+.TP
+.I -V --version
+Print program version and exit.
+
+.TP
+.I -v --volume
+Adjust the mixer volume. You can set (-v 50), or adjust (-v +10), (-v -10).
+
+.TP
+.I -t --toggle
+.TP
+.I -o --on
+.TP
+.I -u --off
+
+Followed by a list of identifiers, these will control MOC's playlist options.
+Valid identifiers: shuffle, repeat, and autonext. Can be shortened to
+s, r, and n respectively.
+
+Example: -t shuffle,r,n would toggle shuffle repeat and autonext all at once.
+
+.TP
+.I -j --jump N
+
+Jump to some positions in the current file. N is number of seconds followed by 's'
+or percent of total file time followed by '%'. Examples: -j 10s, -j 50%
+
+.SH FILES
+
+.TP
+.I ~/.moc
+
+MOC directory for configuration file, socket, pid file, and other data.
+
+.TP
+.I ~/.moc/config
+
+Configuration file of MOC. Format is very simple, to see how to use it,
+look into example configuration file (config.example) distributed with the
+program.
+
+.TP
+.I ~/.moc/themes
+.I /usr/share/moc/themes
+
+Default directories for theme files.
+
+.SH BUGS
+Command line options that affects the server bahaviour (like --sound-driver) are
+ignored if the server is already running at the time of executing mocp. The user
+is not warned about this.
+
+.SH HOMEPAGE
+http://moc.daper.net
+
+.SH AUTHOR
+
+Damian Pietras <daper@daper.net>
